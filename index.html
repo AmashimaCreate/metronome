@@ -356,6 +356,25 @@
     border-color:var(--accent);
     color:var(--accent);
   }
+  .countdown-reset-icon-btn{
+    width:34px;
+    height:34px;
+    border:1px solid rgba(128,128,128,.22);
+    border-radius:50%;
+    background:var(--panel-3);
+    color:var(--sub);
+    cursor:pointer;
+    font-size:18px;
+    font-weight:900;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .countdown-reset-icon-btn:hover{
+    color:var(--accent);
+    border-color:var(--accent-dim);
+  }
   .countdown-body{
     padding:0 14px 14px;
   }
@@ -440,19 +459,10 @@
     border-color:var(--accent);
     color:var(--accent);
   }
-  .countdown-reset-btn{
-    width:100%; height:38px;
-    border:1px solid rgba(128,128,128,.2);
-    border-radius:12px;
-    background:transparent;
-    color:var(--sub);
-    cursor:pointer;
-    font-size:13px; font-weight:800;
-  }
   .countdown-preset:active,
   .countdown-adjust-btn:active,
   .countdown-toggle-btn:active,
-  .countdown-reset-btn:active{ transform:scale(.98); }
+  .countdown-reset-icon-btn:active{ transform:scale(.98); }
 
   .bottom{
     display:grid; grid-template-columns:1fr auto;
@@ -588,6 +598,9 @@
       <span class="countdown-title"><span class="countdown-chevron" aria-hidden="true">▼</span>カウンタ</span>
       <span class="countdown-summary-actions">
         <span class="countdown-summary-time" id="countdownSummaryTime"></span>
+        <button type="button" class="countdown-reset-icon-btn" id="countdownResetBtn" aria-label="カウンタをリセット" title="リセット">
+          <span aria-hidden="true">↺</span>
+        </button>
         <button type="button" class="countdown-toggle-btn" id="countdownToggleBtn" aria-pressed="false">OFF</button>
       </span>
     </summary>
@@ -614,7 +627,6 @@
         <button type="button" class="countdown-preset active" data-countdown-min="25">25分</button>
         <button type="button" class="countdown-preset" data-countdown-min="30">30分</button>
       </div>
-      <button type="button" class="countdown-reset-btn" id="countdownResetBtn">リセット</button>
     </div>
   </details>
 </div>
@@ -1506,7 +1518,11 @@
   });
   setupCountdownAdjust(countdownMinusBtn, -1);
   setupCountdownAdjust(countdownPlusBtn, 1);
-  countdownResetBtn.addEventListener("click", resetCountdown);
+  countdownResetBtn.addEventListener("click", e => {
+    e.preventDefault();
+    e.stopPropagation();
+    resetCountdown();
+  });
 
   volumeSlider.addEventListener("input", () => {
     updateVolumeLabel();
