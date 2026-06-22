@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="description" content="ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、練習タイマーに対応。" />
+<meta name="description" content="ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応。" />
 <meta name="theme-color" content="#101010" />
 <meta property="og:title" content="ギター練習用メトロノーム" />
-<meta property="og:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、練習タイマーに対応したギター練習用メトロノーム。" />
+<meta property="og:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応したギター練習用メトロノーム。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://amashimacreate.github.io/metronome/" />
 <meta property="og:image" content="https://amashimacreate.github.io/metronome/og-image.png" />
@@ -15,7 +15,7 @@
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="ギター練習用メトロノーム" />
-<meta name="twitter:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、練習タイマーに対応。" />
+<meta name="twitter:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応。" />
 <meta name="twitter:image" content="https://amashimacreate.github.io/metronome/og-image.png" />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <title>ギター練習用メトロノーム</title>
@@ -300,56 +300,104 @@
   }
   .slowup-status.visible{ display:block; }
 
-  .practice-box{
-    background:var(--panel-2); border-radius:var(--radius);
-    padding:14px; margin-bottom:var(--section-gap);
+  .countdown-box{
+    background:var(--panel-2);
+    border:1px solid rgba(128,128,128,.14);
+    border-radius:var(--radius);
+    margin-bottom:var(--section-gap);
+    overflow:hidden;
   }
-  .practice-header{
-    display:flex; align-items:flex-start; justify-content:space-between;
-    gap:12px; margin-bottom:12px;
+  .countdown-summary{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; min-height:54px; padding:0 14px;
+    cursor:pointer; list-style:none;
   }
-  .practice-title{ font-size:15px; font-weight:800; color:var(--text); }
-  .practice-subtitle{ font-size:13px; color:var(--sub); margin-top:3px; }
-  .practice-time{
-    font-size:34px; line-height:1; font-weight:800;
-    font-variant-numeric:tabular-nums; letter-spacing:.02em;
+  .countdown-summary::-webkit-details-marker{ display:none; }
+  .countdown-summary:focus-visible{
+    outline:2px solid var(--accent); outline-offset:-4px;
+    border-radius:var(--radius);
   }
-  .practice-target-row{
-    display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end;
+  .countdown-title{
+    display:flex; align-items:center; gap:8px;
+    min-width:0; color:var(--text);
+    font-size:15px; font-weight:800; letter-spacing:.04em;
+  }
+  .countdown-chevron{
+    color:var(--sub); font-size:14px;
+    transform:rotate(-90deg); transition:transform .16s ease;
+  }
+  .countdown-box[open] .countdown-chevron{ transform:rotate(0deg); }
+  .countdown-summary-time{
+    color:var(--accent);
+    font-size:22px; line-height:1; font-weight:800;
+    font-variant-numeric:tabular-nums;
+  }
+  .countdown-body{
+    padding:0 14px 14px;
+  }
+  .countdown-stats{
+    display:grid; grid-template-columns:1fr 1fr;
+    gap:8px; margin-bottom:10px;
+  }
+  .countdown-stat{
+    background:var(--panel-3);
+    border-radius:14px;
+    padding:10px 12px;
+    min-width:0;
+  }
+  .countdown-stat-label{
+    color:var(--sub);
+    font-size:12px; font-weight:800;
+    letter-spacing:.08em;
+  }
+  .countdown-stat-value{
+    display:block;
+    margin-top:4px;
+    color:var(--text);
+    font-size:26px; line-height:1;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+  }
+  .countdown-progress{
+    height:9px; background:var(--panel-3);
+    border-radius:999px; overflow:hidden;
     margin-bottom:10px;
   }
-  .practice-target-row label{
-    font-size:13px; color:var(--sub); font-weight:700;
+  .countdown-progress-fill{
+    height:100%; width:0%;
+    background:var(--accent);
+    border-radius:999px;
+    transition:width .2s ease;
   }
-  .practice-target-row input{
-    width:86px; height:40px; background:var(--panel-3);
-    border:1px solid rgba(128,128,128,.2); border-radius:10px;
-    color:var(--text); font-size:16px; font-weight:800;
-    text-align:center; outline:none; -moz-appearance:textfield;
+  .countdown-presets{
+    display:grid; grid-template-columns:repeat(5,1fr);
+    gap:6px; margin-bottom:10px;
   }
-  .practice-target-row input::-webkit-inner-spin-button,
-  .practice-target-row input::-webkit-outer-spin-button{ -webkit-appearance:none; }
-  .practice-target-row input:focus{ border-color:var(--accent); }
-  .practice-progress{
-    height:8px; background:var(--panel-3); border-radius:999px;
-    overflow:hidden; margin-bottom:8px;
+  .countdown-preset{
+    height:38px;
+    border:1px solid rgba(128,128,128,.22);
+    border-radius:12px;
+    background:var(--panel-3);
+    color:var(--sub);
+    font-size:13px; font-weight:800;
+    cursor:pointer;
   }
-  .practice-progress-fill{
-    height:100%; width:0%; background:var(--accent);
-    border-radius:999px; transition:width .2s ease;
+  .countdown-preset.active{
+    background:var(--accent-bg);
+    border-color:var(--accent);
+    color:var(--accent);
   }
-  .practice-status{
-    min-height:18px; color:var(--sub); font-size:13px;
-    text-align:center; font-weight:700;
-  }
-  .practice-status.reached{ color:var(--accent); }
-  .practice-reset-btn{
-    width:100%; height:38px; margin-top:10px;
-    border:1px solid rgba(128,128,128,.2); border-radius:12px;
-    background:transparent; color:var(--sub); cursor:pointer;
+  .countdown-reset-btn{
+    width:100%; height:38px;
+    border:1px solid rgba(128,128,128,.2);
+    border-radius:12px;
+    background:transparent;
+    color:var(--sub);
+    cursor:pointer;
     font-size:13px; font-weight:800;
   }
-  .practice-reset-btn:active{ transform:scale(.98); }
+  .countdown-preset:active,
+  .countdown-reset-btn:active{ transform:scale(.98); }
 
   .bottom{
     display:grid; grid-template-columns:1fr auto;
@@ -480,24 +528,35 @@
   <button type="button" class="main-button" id="startStopBtn">▶ スタート</button>
   <div class="audio-error" id="audioError" role="status" aria-live="polite"></div>
 
-  <div class="practice-box">
-    <div class="practice-header">
-      <div>
-        <div class="practice-title">練習時間</div>
-        <div class="practice-subtitle">スタート中だけカウント</div>
+  <details class="countdown-box" id="countdownBox">
+    <summary class="countdown-summary">
+      <span class="countdown-title"><span class="countdown-chevron" aria-hidden="true">▼</span>カウンタ</span>
+      <span class="countdown-summary-time" id="countdownSummaryTime">25:00</span>
+    </summary>
+    <div class="countdown-body">
+      <div class="countdown-stats">
+        <div class="countdown-stat">
+          <span class="countdown-stat-label">目標時間</span>
+          <strong class="countdown-stat-value" id="countdownTargetLabel">25:00</strong>
+        </div>
+        <div class="countdown-stat">
+          <span class="countdown-stat-label">残り</span>
+          <strong class="countdown-stat-value" id="countdownTime">25:00</strong>
+        </div>
       </div>
-      <div class="practice-time" id="practiceTime">00:00</div>
+      <div class="countdown-progress" aria-hidden="true">
+        <div class="countdown-progress-fill" id="countdownProgressFill"></div>
+      </div>
+      <div class="countdown-presets" aria-label="カウンタの目標時間">
+        <button type="button" class="countdown-preset" data-countdown-min="5">5分</button>
+        <button type="button" class="countdown-preset" data-countdown-min="10">10分</button>
+        <button type="button" class="countdown-preset" data-countdown-min="15">15分</button>
+        <button type="button" class="countdown-preset active" data-countdown-min="25">25分</button>
+        <button type="button" class="countdown-preset" data-countdown-min="30">30分</button>
+      </div>
+      <button type="button" class="countdown-reset-btn" id="countdownResetBtn">リセット</button>
     </div>
-    <div class="practice-target-row">
-      <label for="practiceTarget">目標時間<br><span class="su-hint">分単位で設定</span></label>
-      <input type="number" id="practiceTarget" value="30" min="1" max="240" inputmode="numeric">
-    </div>
-    <div class="practice-progress" aria-hidden="true">
-      <div class="practice-progress-fill" id="practiceProgressFill"></div>
-    </div>
-    <div class="practice-status" id="practiceStatus">目標まで 30:00</div>
-    <button type="button" class="practice-reset-btn" id="practiceResetBtn">タイマーをリセット</button>
-  </div>
+  </details>
 </div>
 
 <div class="right-panel">
@@ -593,10 +652,11 @@
   let tapTimes = [];
   let favsMemory = [];
   let currentTheme = "dark";
-  let practiceElapsedMs = 0;
-  let practiceStartedAt = null;
-  let practiceTimerId = null;
-  let practiceGoalReached = false;
+  let countdownMinutes = 25;
+  let countdownDurationMs = countdownMinutes * 60 * 1000;
+  let countdownRemainingMs = countdownDurationMs;
+  let countdownTimerId = null;
+  let countdownLastTickAt = null;
 
   const $ = id => document.getElementById(id);
   const bpmValueWrap = $("bpmValueWrap");
@@ -626,11 +686,12 @@
   const suBars = $("suBars");
   const appRoot = $("appRoot");
   const resetBtn = $("resetBtn");
-  const practiceTime = $("practiceTime");
-  const practiceTarget = $("practiceTarget");
-  const practiceProgressFill = $("practiceProgressFill");
-  const practiceStatus = $("practiceStatus");
-  const practiceResetBtn = $("practiceResetBtn");
+  const countdownSummaryTime = $("countdownSummaryTime");
+  const countdownTargetLabel = $("countdownTargetLabel");
+  const countdownTime = $("countdownTime");
+  const countdownProgressFill = $("countdownProgressFill");
+  const countdownResetBtn = $("countdownResetBtn");
+  const countdownPresetBtns = Array.from(document.querySelectorAll(".countdown-preset"));
 
   function getCtx() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -825,11 +886,6 @@
     accentBtn.innerHTML = accentOn ? "1拍目<br>アクセント ON" : "1拍目<br>アクセント OFF";
   }
 
-  function getPracticeElapsedMs() {
-    if (!isRunning || practiceStartedAt == null) return practiceElapsedMs;
-    return practiceElapsedMs + (Date.now() - practiceStartedAt);
-  }
-
   function formatClock(ms) {
     const totalSec = Math.max(0, Math.floor(ms / 1000));
     const h = Math.floor(totalSec / 3600);
@@ -841,54 +897,81 @@
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
-  function getPracticeTargetMinutes() {
-    return getClampedNumber(practiceTarget, 30);
+  function normalizeCountdownMinutes(minutes) {
+    const value = Math.round(Number(minutes));
+    if (!Number.isFinite(value)) return 25;
+    return Math.max(1, Math.min(240, value));
   }
 
-  function updatePracticeUi() {
-    const elapsed = getPracticeElapsedMs();
-    const targetMs = getPracticeTargetMinutes() * 60 * 1000;
-    const ratio = targetMs > 0 ? Math.min(1, elapsed / targetMs) : 0;
-    const remaining = Math.max(0, targetMs - elapsed);
+  function updateCountdownUi() {
+    const ratio = countdownDurationMs > 0
+      ? Math.min(1, Math.max(0, 1 - countdownRemainingMs / countdownDurationMs))
+      : 0;
 
-    practiceTime.textContent = formatClock(elapsed);
-    practiceProgressFill.style.width = `${Math.round(ratio * 100)}%`;
+    countdownSummaryTime.textContent = formatClock(countdownRemainingMs);
+    countdownTargetLabel.textContent = formatClock(countdownDurationMs);
+    countdownTime.textContent = formatClock(countdownRemainingMs);
+    countdownProgressFill.style.width = `${Math.round(ratio * 100)}%`;
 
-    if (elapsed >= targetMs && targetMs > 0) {
-      practiceStatus.textContent = "🎉 目標時間に到達！";
-      practiceStatus.classList.add("reached");
-      practiceGoalReached = true;
-    } else {
-      practiceStatus.textContent = `目標まで ${formatClock(remaining)}`;
-      practiceStatus.classList.remove("reached");
-      practiceGoalReached = false;
+    countdownPresetBtns.forEach(btn => {
+      const active = Number(btn.dataset.countdownMin) === countdownMinutes;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
+  function setCountdownMinutes(minutes, skipSave = false) {
+    countdownMinutes = normalizeCountdownMinutes(minutes);
+    countdownDurationMs = countdownMinutes * 60 * 1000;
+    countdownRemainingMs = countdownDurationMs;
+    countdownLastTickAt = isRunning ? Date.now() : null;
+    if (isRunning && !countdownTimerId) {
+      countdownTimerId = setInterval(tickCountdown, 250);
+    }
+    updateCountdownUi();
+    if (!skipSave) saveSettings();
+  }
+
+  function tickCountdown() {
+    if (countdownLastTickAt == null) return;
+    const now = Date.now();
+    const delta = now - countdownLastTickAt;
+    countdownLastTickAt = now;
+    countdownRemainingMs = Math.max(0, countdownRemainingMs - delta);
+    updateCountdownUi();
+
+    if (countdownRemainingMs <= 0 && countdownTimerId) {
+      clearInterval(countdownTimerId);
+      countdownTimerId = null;
+      countdownLastTickAt = null;
     }
   }
 
-  function startPracticeTimer() {
-    if (practiceStartedAt == null) practiceStartedAt = Date.now();
-    if (practiceTimerId) clearInterval(practiceTimerId);
-    practiceTimerId = setInterval(updatePracticeUi, 250);
-    updatePracticeUi();
+  function startCountdown() {
+    if (countdownRemainingMs <= 0) countdownRemainingMs = countdownDurationMs;
+    countdownLastTickAt = Date.now();
+    if (countdownTimerId) clearInterval(countdownTimerId);
+    countdownTimerId = setInterval(tickCountdown, 250);
+    updateCountdownUi();
   }
 
-  function pausePracticeTimer() {
-    if (practiceStartedAt != null) {
-      practiceElapsedMs += Date.now() - practiceStartedAt;
-      practiceStartedAt = null;
+  function pauseCountdown() {
+    tickCountdown();
+    if (countdownTimerId) {
+      clearInterval(countdownTimerId);
+      countdownTimerId = null;
     }
-    if (practiceTimerId) {
-      clearInterval(practiceTimerId);
-      practiceTimerId = null;
-    }
-    updatePracticeUi();
+    countdownLastTickAt = null;
+    updateCountdownUi();
   }
 
-  function resetPracticeTimer() {
-    practiceElapsedMs = 0;
-    practiceStartedAt = isRunning ? Date.now() : null;
-    practiceGoalReached = false;
-    updatePracticeUi();
+  function resetCountdown() {
+    countdownRemainingMs = countdownDurationMs;
+    countdownLastTickAt = isRunning ? Date.now() : null;
+    if (isRunning && !countdownTimerId) {
+      countdownTimerId = setInterval(tickCountdown, 250);
+    }
+    updateCountdownUi();
   }
 
   function applyTheme(theme) {
@@ -947,7 +1030,7 @@
       suTarget: getClampedNumber(suTarget, 160),
       suStep: getClampedNumber(suStep, 5),
       suBars: getClampedNumber(suBars, 8),
-      practiceTarget: getClampedNumber(practiceTarget, 30)
+      countdownMinutes
     };
   }
 
@@ -973,7 +1056,13 @@
       if (typeof s.suTarget === "number") suTarget.value = String(Math.max(41, Math.min(240, s.suTarget)));
       if (typeof s.suStep === "number") suStep.value = String(Math.max(1, Math.min(20, s.suStep)));
       if (typeof s.suBars === "number") suBars.value = String(Math.max(1, Math.min(64, s.suBars)));
-      if (typeof s.practiceTarget === "number") practiceTarget.value = String(Math.max(1, Math.min(240, s.practiceTarget)));
+      if (typeof s.countdownMinutes === "number") {
+        countdownMinutes = normalizeCountdownMinutes(s.countdownMinutes);
+      } else if (typeof s.practiceTarget === "number") {
+        countdownMinutes = normalizeCountdownMinutes(s.practiceTarget);
+      }
+      countdownDurationMs = countdownMinutes * 60 * 1000;
+      countdownRemainingMs = countdownDurationMs;
     } catch (e) {}
   }
 
@@ -1077,7 +1166,7 @@
 
     clearFlash();
     updateSlowupStatus();
-    startPracticeTimer();
+    startCountdown();
     scheduler(schedulerRunId);
   }
 
@@ -1092,7 +1181,7 @@
     startStopBtn.classList.remove("running");
     startStopBtn.textContent = "▶ スタート";
     slowupStatus.classList.remove("visible");
-    pausePracticeTimer();
+    pauseCountdown();
   }
 
   function setBeatMode(n) {
@@ -1268,25 +1357,10 @@
     });
   });
 
-  practiceTarget.addEventListener("input", () => {
-    saveSettings();
-    updatePracticeUi();
+  countdownPresetBtns.forEach(btn => {
+    btn.addEventListener("click", () => setCountdownMinutes(btn.dataset.countdownMin));
   });
-  practiceTarget.addEventListener("change", () => {
-    normalizeNumberInput(practiceTarget, 30);
-    saveSettings();
-    updatePracticeUi();
-  });
-  practiceTarget.addEventListener("keydown", e => {
-    if (e.key === "Enter" || e.key === "NumpadEnter") {
-      e.preventDefault();
-      normalizeNumberInput(practiceTarget, 30);
-      saveSettings();
-      updatePracticeUi();
-      practiceTarget.blur();
-    }
-  });
-  practiceResetBtn.addEventListener("click", resetPracticeTimer);
+  countdownResetBtn.addEventListener("click", resetCountdown);
 
   volumeSlider.addEventListener("input", () => {
     updateVolumeLabel();
@@ -1331,8 +1405,9 @@
     suTarget.value = "160";
     suStep.value = "5";
     suBars.value = "8";
-    practiceTarget.value = "30";
-    resetPracticeTimer();
+    countdownMinutes = 25;
+    countdownDurationMs = countdownMinutes * 60 * 1000;
+    resetCountdown();
 
     updateVolumeLabel();
     updateAccentButton();
@@ -1363,7 +1438,7 @@
   updateVolumeLabel();
   updateAccentButton();
   updateSlowupUi();
-  updatePracticeUi();
+  updateCountdownUi();
   document.querySelectorAll(".subdiv-btn").forEach(btn => {
     btn.classList.toggle("active", parseInt(btn.dataset.sub, 10) === subdivision);
   });
