@@ -314,20 +314,6 @@
     font-size:34px; line-height:1; font-weight:800;
     font-variant-numeric:tabular-nums; letter-spacing:.02em;
   }
-  .practice-grid{
-    display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;
-  }
-  .practice-stat{
-    background:var(--panel-3); border:1px solid rgba(128,128,128,.16);
-    border-radius:12px; padding:10px 8px; text-align:center;
-  }
-  .practice-stat-label{
-    font-size:11px; color:var(--sub); letter-spacing:.12em;
-    text-transform:uppercase; margin-bottom:4px; font-weight:700;
-  }
-  .practice-stat-value{
-    font-size:20px; font-weight:800; font-variant-numeric:tabular-nums;
-  }
   .practice-target-row{
     display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end;
     margin-bottom:10px;
@@ -364,6 +350,35 @@
     font-size:13px; font-weight:800;
   }
   .practice-reset-btn:active{ transform:scale(.98); }
+
+  .counter-box{
+    background:var(--panel-2); border-radius:var(--radius);
+    padding:14px; margin-bottom:var(--section-gap);
+  }
+  .counter-head{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px; margin-bottom:12px;
+  }
+  .counter-title{ font-size:15px; font-weight:800; color:var(--text); }
+  .counter-subtitle{ font-size:13px; color:var(--sub); margin-top:3px; }
+  .counter-value{
+    min-width:72px; text-align:right;
+    font-size:42px; line-height:.95; font-weight:800;
+    font-variant-numeric:tabular-nums;
+  }
+  .counter-plus{
+    width:100%; height:56px; border:none; border-radius:16px;
+    background:var(--accent); color:#161616;
+    font-size:22px; font-weight:900; cursor:pointer;
+    margin-bottom:8px;
+  }
+  .counter-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .counter-mini-btn{
+    height:40px; border:1px solid rgba(128,128,128,.2);
+    border-radius:12px; background:var(--panel-3); color:var(--text);
+    font-size:14px; font-weight:800; cursor:pointer;
+  }
+  .counter-plus:active,.counter-mini-btn:active{ transform:scale(.98); }
 
   .bottom{
     display:grid; grid-template-columns:1fr auto;
@@ -493,6 +508,25 @@
 
   <button type="button" class="main-button" id="startStopBtn">▶ スタート</button>
   <div class="audio-error" id="audioError" role="status" aria-live="polite"></div>
+
+  <div class="practice-box">
+    <div class="practice-header">
+      <div>
+        <div class="practice-title">練習タイマー</div>
+        <div class="practice-subtitle">再生中だけ時間を記録</div>
+      </div>
+      <div class="practice-time" id="practiceTime">00:00</div>
+    </div>
+    <div class="practice-target-row">
+      <label for="practiceTarget">目標時間<br><span class="su-hint">分単位で設定</span></label>
+      <input type="number" id="practiceTarget" value="30" min="1" max="240" inputmode="numeric">
+    </div>
+    <div class="practice-progress" aria-hidden="true">
+      <div class="practice-progress-fill" id="practiceProgressFill"></div>
+    </div>
+    <div class="practice-status" id="practiceStatus">目標まで 30:00</div>
+    <button type="button" class="practice-reset-btn" id="practiceResetBtn">タイマーをリセット</button>
+  </div>
 </div>
 
 <div class="right-panel">
@@ -504,6 +538,21 @@
     <button type="button" class="subdiv-btn" data-sub="2">8分</button>
     <button type="button" class="subdiv-btn" data-sub="4">16分</button>
     <button type="button" class="subdiv-btn" data-sub="3">3連</button>
+  </div>
+
+  <div class="counter-box">
+    <div class="counter-head">
+      <div>
+        <div class="counter-title">カウンター</div>
+        <div class="counter-subtitle">回数やセットを手動で記録</div>
+      </div>
+      <div class="counter-value" id="practiceCounterValue">0</div>
+    </div>
+    <button type="button" class="counter-plus" id="counterPlusBtn">+1</button>
+    <div class="counter-actions">
+      <button type="button" class="counter-mini-btn" id="counterMinusBtn">−1</button>
+      <button type="button" class="counter-mini-btn" id="counterResetBtn">リセット</button>
+    </div>
   </div>
 
   <div class="section-label">お気に入り BPM <span id="favCount" style="font-weight:400;font-size:12px"></span></div>
@@ -538,35 +587,6 @@
       </div>
     </div>
     <div class="slowup-status" id="slowupStatus"></div>
-  </div>
-
-  <div class="practice-box">
-    <div class="practice-header">
-      <div>
-        <div class="practice-title">練習タイマー</div>
-        <div class="practice-subtitle">再生中の練習時間を記録</div>
-      </div>
-      <div class="practice-time" id="practiceTime">00:00</div>
-    </div>
-    <div class="practice-grid">
-      <div class="practice-stat">
-        <div class="practice-stat-label">Beats</div>
-        <div class="practice-stat-value" id="practiceBeatCount">0</div>
-      </div>
-      <div class="practice-stat">
-        <div class="practice-stat-label">Bars</div>
-        <div class="practice-stat-value" id="practiceBarCount">0</div>
-      </div>
-    </div>
-    <div class="practice-target-row">
-      <label for="practiceTarget">目標時間<br><span class="su-hint">分単位で設定</span></label>
-      <input type="number" id="practiceTarget" value="30" min="1" max="240" inputmode="numeric">
-    </div>
-    <div class="practice-progress" aria-hidden="true">
-      <div class="practice-progress-fill" id="practiceProgressFill"></div>
-    </div>
-    <div class="practice-status" id="practiceStatus">目標まで 30:00</div>
-    <button type="button" class="practice-reset-btn" id="practiceResetBtn">練習カウンタをリセット</button>
   </div>
 
   <div class="bottom">
@@ -620,9 +640,8 @@
   let practiceElapsedMs = 0;
   let practiceStartedAt = null;
   let practiceTimerId = null;
-  let practiceBeats = 0;
-  let practiceBars = 0;
   let practiceGoalReached = false;
+  let practiceCounter = 0;
 
   const $ = id => document.getElementById(id);
   const bpmValueWrap = $("bpmValueWrap");
@@ -653,12 +672,14 @@
   const appRoot = $("appRoot");
   const resetBtn = $("resetBtn");
   const practiceTime = $("practiceTime");
-  const practiceBeatCount = $("practiceBeatCount");
-  const practiceBarCount = $("practiceBarCount");
   const practiceTarget = $("practiceTarget");
   const practiceProgressFill = $("practiceProgressFill");
   const practiceStatus = $("practiceStatus");
   const practiceResetBtn = $("practiceResetBtn");
+  const practiceCounterValue = $("practiceCounterValue");
+  const counterPlusBtn = $("counterPlusBtn");
+  const counterMinusBtn = $("counterMinusBtn");
+  const counterResetBtn = $("counterResetBtn");
 
   function getCtx() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -728,7 +749,6 @@
       }
 
       scheduleFlash(beat, nextNoteTime, runId);
-      recordPracticeBeat(beat);
 
       nextNoteTime += 60 / bpm;
       currentBeat = (currentBeat + 1) % totalBeats;
@@ -881,8 +901,6 @@
     const remaining = Math.max(0, targetMs - elapsed);
 
     practiceTime.textContent = formatClock(elapsed);
-    practiceBeatCount.textContent = String(practiceBeats);
-    practiceBarCount.textContent = String(practiceBars);
     practiceProgressFill.style.width = `${Math.round(ratio * 100)}%`;
 
     if (elapsed >= targetMs && targetMs > 0) {
@@ -915,19 +933,25 @@
     updatePracticeUi();
   }
 
-  function resetPracticeCounter() {
+  function resetPracticeTimer() {
     practiceElapsedMs = 0;
     practiceStartedAt = isRunning ? Date.now() : null;
-    practiceBeats = 0;
-    practiceBars = 0;
     practiceGoalReached = false;
     updatePracticeUi();
   }
 
-  function recordPracticeBeat(beat) {
-    practiceBeats++;
-    if (beat === totalBeats - 1) practiceBars++;
-    if (!practiceGoalReached) updatePracticeUi();
+  function updateManualCounter() {
+    practiceCounterValue.textContent = String(practiceCounter);
+  }
+
+  function changeManualCounter(delta) {
+    practiceCounter = Math.max(0, practiceCounter + delta);
+    updateManualCounter();
+  }
+
+  function resetManualCounter() {
+    practiceCounter = 0;
+    updateManualCounter();
   }
 
   function applyTheme(theme) {
@@ -1325,7 +1349,10 @@
       practiceTarget.blur();
     }
   });
-  practiceResetBtn.addEventListener("click", resetPracticeCounter);
+  practiceResetBtn.addEventListener("click", resetPracticeTimer);
+  counterPlusBtn.addEventListener("click", () => changeManualCounter(1));
+  counterMinusBtn.addEventListener("click", () => changeManualCounter(-1));
+  counterResetBtn.addEventListener("click", resetManualCounter);
 
   volumeSlider.addEventListener("input", () => {
     updateVolumeLabel();
@@ -1371,7 +1398,8 @@
     suStep.value = "5";
     suBars.value = "8";
     practiceTarget.value = "30";
-    resetPracticeCounter();
+    resetPracticeTimer();
+    resetManualCounter();
 
     updateVolumeLabel();
     updateAccentButton();
@@ -1403,6 +1431,7 @@
   updateAccentButton();
   updateSlowupUi();
   updatePracticeUi();
+  updateManualCounter();
   document.querySelectorAll(".subdiv-btn").forEach(btn => {
     btn.classList.toggle("active", parseInt(btn.dataset.sub, 10) === subdivision);
   });
