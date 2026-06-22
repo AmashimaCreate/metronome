@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="description" content="ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習に対応。" />
+<meta name="description" content="ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、練習タイマーに対応。" />
 <meta name="theme-color" content="#101010" />
 <meta property="og:title" content="ギター練習用メトロノーム" />
-<meta property="og:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習に対応したギター練習用メトロノーム。" />
+<meta property="og:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、練習タイマーに対応したギター練習用メトロノーム。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://amashimacreate.github.io/metronome/" />
 <meta property="og:image" content="https://amashimacreate.github.io/metronome/og-image.png" />
@@ -15,7 +15,7 @@
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="ギター練習用メトロノーム" />
-<meta name="twitter:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習に対応。" />
+<meta name="twitter:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、練習タイマーに対応。" />
 <meta name="twitter:image" content="https://amashimacreate.github.io/metronome/og-image.png" />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <title>ギター練習用メトロノーム</title>
@@ -300,6 +300,71 @@
   }
   .slowup-status.visible{ display:block; }
 
+  .practice-box{
+    background:var(--panel-2); border-radius:var(--radius);
+    padding:14px; margin-bottom:var(--section-gap);
+  }
+  .practice-header{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px; margin-bottom:12px;
+  }
+  .practice-title{ font-size:15px; font-weight:800; color:var(--text); }
+  .practice-subtitle{ font-size:13px; color:var(--sub); margin-top:3px; }
+  .practice-time{
+    font-size:34px; line-height:1; font-weight:800;
+    font-variant-numeric:tabular-nums; letter-spacing:.02em;
+  }
+  .practice-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;
+  }
+  .practice-stat{
+    background:var(--panel-3); border:1px solid rgba(128,128,128,.16);
+    border-radius:12px; padding:10px 8px; text-align:center;
+  }
+  .practice-stat-label{
+    font-size:11px; color:var(--sub); letter-spacing:.12em;
+    text-transform:uppercase; margin-bottom:4px; font-weight:700;
+  }
+  .practice-stat-value{
+    font-size:20px; font-weight:800; font-variant-numeric:tabular-nums;
+  }
+  .practice-target-row{
+    display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end;
+    margin-bottom:10px;
+  }
+  .practice-target-row label{
+    font-size:13px; color:var(--sub); font-weight:700;
+  }
+  .practice-target-row input{
+    width:86px; height:40px; background:var(--panel-3);
+    border:1px solid rgba(128,128,128,.2); border-radius:10px;
+    color:var(--text); font-size:16px; font-weight:800;
+    text-align:center; outline:none; -moz-appearance:textfield;
+  }
+  .practice-target-row input::-webkit-inner-spin-button,
+  .practice-target-row input::-webkit-outer-spin-button{ -webkit-appearance:none; }
+  .practice-target-row input:focus{ border-color:var(--accent); }
+  .practice-progress{
+    height:8px; background:var(--panel-3); border-radius:999px;
+    overflow:hidden; margin-bottom:8px;
+  }
+  .practice-progress-fill{
+    height:100%; width:0%; background:var(--accent);
+    border-radius:999px; transition:width .2s ease;
+  }
+  .practice-status{
+    min-height:18px; color:var(--sub); font-size:13px;
+    text-align:center; font-weight:700;
+  }
+  .practice-status.reached{ color:var(--accent); }
+  .practice-reset-btn{
+    width:100%; height:38px; margin-top:10px;
+    border:1px solid rgba(128,128,128,.2); border-radius:12px;
+    background:transparent; color:var(--sub); cursor:pointer;
+    font-size:13px; font-weight:800;
+  }
+  .practice-reset-btn:active{ transform:scale(.98); }
+
   .bottom{
     display:grid; grid-template-columns:1fr auto;
     gap:12px; align-items:center; margin-bottom:var(--section-gap);
@@ -475,6 +540,35 @@
     <div class="slowup-status" id="slowupStatus"></div>
   </div>
 
+  <div class="practice-box">
+    <div class="practice-header">
+      <div>
+        <div class="practice-title">練習タイマー</div>
+        <div class="practice-subtitle">再生中の練習時間を記録</div>
+      </div>
+      <div class="practice-time" id="practiceTime">00:00</div>
+    </div>
+    <div class="practice-grid">
+      <div class="practice-stat">
+        <div class="practice-stat-label">Beats</div>
+        <div class="practice-stat-value" id="practiceBeatCount">0</div>
+      </div>
+      <div class="practice-stat">
+        <div class="practice-stat-label">Bars</div>
+        <div class="practice-stat-value" id="practiceBarCount">0</div>
+      </div>
+    </div>
+    <div class="practice-target-row">
+      <label for="practiceTarget">目標時間<br><span class="su-hint">分単位で設定</span></label>
+      <input type="number" id="practiceTarget" value="30" min="1" max="240" inputmode="numeric">
+    </div>
+    <div class="practice-progress" aria-hidden="true">
+      <div class="practice-progress-fill" id="practiceProgressFill"></div>
+    </div>
+    <div class="practice-status" id="practiceStatus">目標まで 30:00</div>
+    <button type="button" class="practice-reset-btn" id="practiceResetBtn">練習カウンタをリセット</button>
+  </div>
+
   <div class="bottom">
     <div class="volume-box">
       <div class="volume-head">
@@ -523,6 +617,12 @@
   let tapTimes = [];
   let favsMemory = [];
   let currentTheme = "dark";
+  let practiceElapsedMs = 0;
+  let practiceStartedAt = null;
+  let practiceTimerId = null;
+  let practiceBeats = 0;
+  let practiceBars = 0;
+  let practiceGoalReached = false;
 
   const $ = id => document.getElementById(id);
   const bpmValueWrap = $("bpmValueWrap");
@@ -552,6 +652,13 @@
   const suBars = $("suBars");
   const appRoot = $("appRoot");
   const resetBtn = $("resetBtn");
+  const practiceTime = $("practiceTime");
+  const practiceBeatCount = $("practiceBeatCount");
+  const practiceBarCount = $("practiceBarCount");
+  const practiceTarget = $("practiceTarget");
+  const practiceProgressFill = $("practiceProgressFill");
+  const practiceStatus = $("practiceStatus");
+  const practiceResetBtn = $("practiceResetBtn");
 
   function getCtx() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -621,6 +728,7 @@
       }
 
       scheduleFlash(beat, nextNoteTime, runId);
+      recordPracticeBeat(beat);
 
       nextNoteTime += 60 / bpm;
       currentBeat = (currentBeat + 1) % totalBeats;
@@ -746,6 +854,82 @@
     accentBtn.innerHTML = accentOn ? "1拍目<br>アクセント ON" : "1拍目<br>アクセント OFF";
   }
 
+  function getPracticeElapsedMs() {
+    if (!isRunning || practiceStartedAt == null) return practiceElapsedMs;
+    return practiceElapsedMs + (Date.now() - practiceStartedAt);
+  }
+
+  function formatClock(ms) {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) {
+      return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  function getPracticeTargetMinutes() {
+    return getClampedNumber(practiceTarget, 30);
+  }
+
+  function updatePracticeUi() {
+    const elapsed = getPracticeElapsedMs();
+    const targetMs = getPracticeTargetMinutes() * 60 * 1000;
+    const ratio = targetMs > 0 ? Math.min(1, elapsed / targetMs) : 0;
+    const remaining = Math.max(0, targetMs - elapsed);
+
+    practiceTime.textContent = formatClock(elapsed);
+    practiceBeatCount.textContent = String(practiceBeats);
+    practiceBarCount.textContent = String(practiceBars);
+    practiceProgressFill.style.width = `${Math.round(ratio * 100)}%`;
+
+    if (elapsed >= targetMs && targetMs > 0) {
+      practiceStatus.textContent = "🎉 目標時間に到達！";
+      practiceStatus.classList.add("reached");
+      practiceGoalReached = true;
+    } else {
+      practiceStatus.textContent = `目標まで ${formatClock(remaining)}`;
+      practiceStatus.classList.remove("reached");
+      practiceGoalReached = false;
+    }
+  }
+
+  function startPracticeTimer() {
+    if (practiceStartedAt == null) practiceStartedAt = Date.now();
+    if (practiceTimerId) clearInterval(practiceTimerId);
+    practiceTimerId = setInterval(updatePracticeUi, 250);
+    updatePracticeUi();
+  }
+
+  function pausePracticeTimer() {
+    if (practiceStartedAt != null) {
+      practiceElapsedMs += Date.now() - practiceStartedAt;
+      practiceStartedAt = null;
+    }
+    if (practiceTimerId) {
+      clearInterval(practiceTimerId);
+      practiceTimerId = null;
+    }
+    updatePracticeUi();
+  }
+
+  function resetPracticeCounter() {
+    practiceElapsedMs = 0;
+    practiceStartedAt = isRunning ? Date.now() : null;
+    practiceBeats = 0;
+    practiceBars = 0;
+    practiceGoalReached = false;
+    updatePracticeUi();
+  }
+
+  function recordPracticeBeat(beat) {
+    practiceBeats++;
+    if (beat === totalBeats - 1) practiceBars++;
+    if (!practiceGoalReached) updatePracticeUi();
+  }
+
   function applyTheme(theme) {
     currentTheme = theme === "parchment" ? "parchment" : "dark";
     document.querySelectorAll(".theme-dot").forEach(dot => {
@@ -801,7 +985,8 @@
       suEnabled,
       suTarget: getClampedNumber(suTarget, 160),
       suStep: getClampedNumber(suStep, 5),
-      suBars: getClampedNumber(suBars, 8)
+      suBars: getClampedNumber(suBars, 8),
+      practiceTarget: getClampedNumber(practiceTarget, 30)
     };
   }
 
@@ -827,6 +1012,7 @@
       if (typeof s.suTarget === "number") suTarget.value = String(Math.max(41, Math.min(240, s.suTarget)));
       if (typeof s.suStep === "number") suStep.value = String(Math.max(1, Math.min(20, s.suStep)));
       if (typeof s.suBars === "number") suBars.value = String(Math.max(1, Math.min(64, s.suBars)));
+      if (typeof s.practiceTarget === "number") practiceTarget.value = String(Math.max(1, Math.min(240, s.practiceTarget)));
     } catch (e) {}
   }
 
@@ -930,6 +1116,7 @@
 
     clearFlash();
     updateSlowupStatus();
+    startPracticeTimer();
     scheduler(schedulerRunId);
   }
 
@@ -944,6 +1131,7 @@
     startStopBtn.classList.remove("running");
     startStopBtn.textContent = "▶ スタート";
     slowupStatus.classList.remove("visible");
+    pausePracticeTimer();
   }
 
   function setBeatMode(n) {
@@ -1119,6 +1307,26 @@
     });
   });
 
+  practiceTarget.addEventListener("input", () => {
+    saveSettings();
+    updatePracticeUi();
+  });
+  practiceTarget.addEventListener("change", () => {
+    normalizeNumberInput(practiceTarget, 30);
+    saveSettings();
+    updatePracticeUi();
+  });
+  practiceTarget.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === "NumpadEnter") {
+      e.preventDefault();
+      normalizeNumberInput(practiceTarget, 30);
+      saveSettings();
+      updatePracticeUi();
+      practiceTarget.blur();
+    }
+  });
+  practiceResetBtn.addEventListener("click", resetPracticeCounter);
+
   volumeSlider.addEventListener("input", () => {
     updateVolumeLabel();
     saveSettings();
@@ -1162,6 +1370,8 @@
     suTarget.value = "160";
     suStep.value = "5";
     suBars.value = "8";
+    practiceTarget.value = "30";
+    resetPracticeCounter();
 
     updateVolumeLabel();
     updateAccentButton();
@@ -1192,6 +1402,7 @@
   updateVolumeLabel();
   updateAccentButton();
   updateSlowupUi();
+  updatePracticeUi();
   document.querySelectorAll(".subdiv-btn").forEach(btn => {
     btn.classList.toggle("active", parseInt(btn.dataset.sub, 10) === subdivision);
   });
