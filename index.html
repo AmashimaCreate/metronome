@@ -351,35 +351,6 @@
   }
   .practice-reset-btn:active{ transform:scale(.98); }
 
-  .counter-box{
-    background:var(--panel-2); border-radius:var(--radius);
-    padding:14px; margin-bottom:var(--section-gap);
-  }
-  .counter-head{
-    display:flex; align-items:flex-start; justify-content:space-between;
-    gap:12px; margin-bottom:12px;
-  }
-  .counter-title{ font-size:15px; font-weight:800; color:var(--text); }
-  .counter-subtitle{ font-size:13px; color:var(--sub); margin-top:3px; }
-  .counter-value{
-    min-width:72px; text-align:right;
-    font-size:42px; line-height:.95; font-weight:800;
-    font-variant-numeric:tabular-nums;
-  }
-  .counter-plus{
-    width:100%; height:56px; border:none; border-radius:16px;
-    background:var(--accent); color:#161616;
-    font-size:22px; font-weight:900; cursor:pointer;
-    margin-bottom:8px;
-  }
-  .counter-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .counter-mini-btn{
-    height:40px; border:1px solid rgba(128,128,128,.2);
-    border-radius:12px; background:var(--panel-3); color:var(--text);
-    font-size:14px; font-weight:800; cursor:pointer;
-  }
-  .counter-plus:active,.counter-mini-btn:active{ transform:scale(.98); }
-
   .bottom{
     display:grid; grid-template-columns:1fr auto;
     gap:12px; align-items:center; margin-bottom:var(--section-gap);
@@ -512,8 +483,8 @@
   <div class="practice-box">
     <div class="practice-header">
       <div>
-        <div class="practice-title">練習タイマー</div>
-        <div class="practice-subtitle">再生中だけ時間を記録</div>
+        <div class="practice-title">練習時間</div>
+        <div class="practice-subtitle">スタート中だけカウント</div>
       </div>
       <div class="practice-time" id="practiceTime">00:00</div>
     </div>
@@ -538,21 +509,6 @@
     <button type="button" class="subdiv-btn" data-sub="2">8分</button>
     <button type="button" class="subdiv-btn" data-sub="4">16分</button>
     <button type="button" class="subdiv-btn" data-sub="3">3連</button>
-  </div>
-
-  <div class="counter-box">
-    <div class="counter-head">
-      <div>
-        <div class="counter-title">カウンター</div>
-        <div class="counter-subtitle">回数やセットを手動で記録</div>
-      </div>
-      <div class="counter-value" id="practiceCounterValue">0</div>
-    </div>
-    <button type="button" class="counter-plus" id="counterPlusBtn">+1</button>
-    <div class="counter-actions">
-      <button type="button" class="counter-mini-btn" id="counterMinusBtn">−1</button>
-      <button type="button" class="counter-mini-btn" id="counterResetBtn">リセット</button>
-    </div>
   </div>
 
   <div class="section-label">お気に入り BPM <span id="favCount" style="font-weight:400;font-size:12px"></span></div>
@@ -641,7 +597,6 @@
   let practiceStartedAt = null;
   let practiceTimerId = null;
   let practiceGoalReached = false;
-  let practiceCounter = 0;
 
   const $ = id => document.getElementById(id);
   const bpmValueWrap = $("bpmValueWrap");
@@ -676,10 +631,6 @@
   const practiceProgressFill = $("practiceProgressFill");
   const practiceStatus = $("practiceStatus");
   const practiceResetBtn = $("practiceResetBtn");
-  const practiceCounterValue = $("practiceCounterValue");
-  const counterPlusBtn = $("counterPlusBtn");
-  const counterMinusBtn = $("counterMinusBtn");
-  const counterResetBtn = $("counterResetBtn");
 
   function getCtx() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -938,20 +889,6 @@
     practiceStartedAt = isRunning ? Date.now() : null;
     practiceGoalReached = false;
     updatePracticeUi();
-  }
-
-  function updateManualCounter() {
-    practiceCounterValue.textContent = String(practiceCounter);
-  }
-
-  function changeManualCounter(delta) {
-    practiceCounter = Math.max(0, practiceCounter + delta);
-    updateManualCounter();
-  }
-
-  function resetManualCounter() {
-    practiceCounter = 0;
-    updateManualCounter();
   }
 
   function applyTheme(theme) {
@@ -1350,9 +1287,6 @@
     }
   });
   practiceResetBtn.addEventListener("click", resetPracticeTimer);
-  counterPlusBtn.addEventListener("click", () => changeManualCounter(1));
-  counterMinusBtn.addEventListener("click", () => changeManualCounter(-1));
-  counterResetBtn.addEventListener("click", resetManualCounter);
 
   volumeSlider.addEventListener("input", () => {
     updateVolumeLabel();
@@ -1399,7 +1333,6 @@
     suBars.value = "8";
     practiceTarget.value = "30";
     resetPracticeTimer();
-    resetManualCounter();
 
     updateVolumeLabel();
     updateAccentButton();
@@ -1431,7 +1364,6 @@
   updateAccentButton();
   updateSlowupUi();
   updatePracticeUi();
-  updateManualCounter();
   document.querySelectorAll(".subdiv-btn").forEach(btn => {
     btn.classList.toggle("active", parseInt(btn.dataset.sub, 10) === subdivision);
   });
