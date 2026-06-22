@@ -332,29 +332,28 @@
     font-size:22px; line-height:1; font-weight:800;
     font-variant-numeric:tabular-nums;
   }
+  .countdown-box[open] .countdown-summary-time{ display:none; }
   .countdown-body{
     padding:0 14px 14px;
   }
-  .countdown-stats{
-    display:grid; grid-template-columns:1fr 1fr;
-    gap:8px; margin-bottom:10px;
-  }
-  .countdown-stat{
+  .countdown-display{
     background:var(--panel-3);
     border-radius:14px;
-    padding:10px 12px;
-    min-width:0;
+    padding:14px 12px;
+    margin-bottom:10px;
+    text-align:center;
   }
-  .countdown-stat-label{
+  .countdown-display-label,
+  .countdown-target-label{
     color:var(--sub);
     font-size:12px; font-weight:800;
     letter-spacing:.08em;
   }
-  .countdown-stat-value{
+  .countdown-time{
     display:block;
-    margin-top:4px;
+    margin-top:5px;
     color:var(--text);
-    font-size:26px; line-height:1;
+    font-size:42px; line-height:1;
     font-weight:800;
     font-variant-numeric:tabular-nums;
   }
@@ -368,6 +367,36 @@
     background:var(--accent);
     border-radius:999px;
     transition:width .2s ease;
+  }
+  .countdown-target-control{
+    display:grid;
+    grid-template-columns:48px minmax(0,1fr) 48px;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .countdown-adjust-btn{
+    width:48px; height:48px;
+    border:1px solid rgba(128,128,128,.22);
+    border-radius:50%;
+    background:var(--panel-3);
+    color:var(--text);
+    cursor:pointer;
+    font-size:24px;
+    font-weight:900;
+  }
+  .countdown-target-readout{
+    min-width:0;
+    text-align:center;
+  }
+  .countdown-target-value{
+    display:block;
+    margin-top:2px;
+    color:var(--text);
+    font-size:24px;
+    line-height:1.1;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
   }
   .countdown-presets{
     display:grid; grid-template-columns:repeat(5,1fr);
@@ -397,6 +426,7 @@
     font-size:13px; font-weight:800;
   }
   .countdown-preset:active,
+  .countdown-adjust-btn:active,
   .countdown-reset-btn:active{ transform:scale(.98); }
 
   .bottom{
@@ -534,18 +564,20 @@
       <span class="countdown-summary-time" id="countdownSummaryTime">25:00</span>
     </summary>
     <div class="countdown-body">
-      <div class="countdown-stats">
-        <div class="countdown-stat">
-          <span class="countdown-stat-label">目標時間</span>
-          <strong class="countdown-stat-value" id="countdownTargetLabel">25:00</strong>
-        </div>
-        <div class="countdown-stat">
-          <span class="countdown-stat-label">残り</span>
-          <strong class="countdown-stat-value" id="countdownTime">25:00</strong>
-        </div>
+      <div class="countdown-display">
+        <span class="countdown-display-label">残り</span>
+        <strong class="countdown-time" id="countdownTime">25:00</strong>
       </div>
       <div class="countdown-progress" aria-hidden="true">
         <div class="countdown-progress-fill" id="countdownProgressFill"></div>
+      </div>
+      <div class="countdown-target-control">
+        <button type="button" class="countdown-adjust-btn" id="countdownMinusBtn" aria-label="目標時間を1分減らす">−</button>
+        <div class="countdown-target-readout">
+          <span class="countdown-target-label">目標時間</span>
+          <strong class="countdown-target-value" id="countdownTargetLabel">25分</strong>
+        </div>
+        <button type="button" class="countdown-adjust-btn" id="countdownPlusBtn" aria-label="目標時間を1分増やす">＋</button>
       </div>
       <div class="countdown-presets" aria-label="カウンタの目標時間">
         <button type="button" class="countdown-preset" data-countdown-min="5">5分</button>
@@ -690,6 +722,8 @@
   const countdownTargetLabel = $("countdownTargetLabel");
   const countdownTime = $("countdownTime");
   const countdownProgressFill = $("countdownProgressFill");
+  const countdownMinusBtn = $("countdownMinusBtn");
+  const countdownPlusBtn = $("countdownPlusBtn");
   const countdownResetBtn = $("countdownResetBtn");
   const countdownPresetBtns = Array.from(document.querySelectorAll(".countdown-preset"));
 
@@ -909,7 +943,7 @@
       : 0;
 
     countdownSummaryTime.textContent = formatClock(countdownRemainingMs);
-    countdownTargetLabel.textContent = formatClock(countdownDurationMs);
+    countdownTargetLabel.textContent = `${countdownMinutes}分`;
     countdownTime.textContent = formatClock(countdownRemainingMs);
     countdownProgressFill.style.width = `${Math.round(ratio * 100)}%`;
 
@@ -1238,6 +1272,52 @@
     });
   }
 
+  function setupCountdownAdjust(btn, delta) {
+    let holdTimeout = null;
+    let repeatTimeout = null;
+    let pressed = false;
+    let repeated = false;
+
+    const clear = () => {
+      clearTimeout(holdTimeout);
+      clearTimeout(repeatTimeout);
+      holdTimeout = null;
+      repeatTimeout = null;
+    };
+
+    const adjust = () => setCountdownMinutes(countdownMinutes + delta);
+    const tick = (delay) => {
+      if (!pressed) return;
+      repeated = true;
+      adjust();
+      const nextDelay = Math.max(85, Math.round(delay * 0.88));
+      repeatTimeout = setTimeout(() => tick(nextDelay), nextDelay);
+    };
+
+    btn.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      pressed = true;
+      repeated = false;
+      holdTimeout = setTimeout(() => tick(180), 360);
+    });
+
+    const up = () => {
+      if (pressed && !repeated) adjust();
+      pressed = false;
+      clear();
+    };
+
+    btn.addEventListener("pointerup", up);
+    btn.addEventListener("pointercancel", () => { pressed = false; clear(); });
+    btn.addEventListener("pointerleave", () => { pressed = false; clear(); });
+    btn.addEventListener("keydown", e => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      e.stopPropagation();
+      adjust();
+    });
+  }
+
   function isInteractiveTarget(target) {
     return !!target.closest("button,input,select,textarea,[contenteditable='true']");
   }
@@ -1360,6 +1440,8 @@
   countdownPresetBtns.forEach(btn => {
     btn.addEventListener("click", () => setCountdownMinutes(btn.dataset.countdownMin));
   });
+  setupCountdownAdjust(countdownMinusBtn, -1);
+  setupCountdownAdjust(countdownPlusBtn, 1);
   countdownResetBtn.addEventListener("click", resetCountdown);
 
   volumeSlider.addEventListener("input", () => {
