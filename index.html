@@ -332,7 +332,30 @@
     font-size:22px; line-height:1; font-weight:800;
     font-variant-numeric:tabular-nums;
   }
+  .countdown-summary-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
   .countdown-box[open] .countdown-summary-time{ display:none; }
+  .countdown-toggle-btn{
+    min-width:58px;
+    height:34px;
+    border:1px solid rgba(128,128,128,.22);
+    border-radius:999px;
+    background:var(--panel-3);
+    color:var(--sub);
+    cursor:pointer;
+    font-size:13px;
+    font-weight:900;
+    letter-spacing:.04em;
+  }
+  .countdown-toggle-btn.on{
+    background:var(--accent-bg);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
   .countdown-body{
     padding:0 14px 14px;
   }
@@ -357,6 +380,7 @@
     font-weight:800;
     font-variant-numeric:tabular-nums;
   }
+  .countdown-time.off{ color:var(--sub); letter-spacing:.06em; }
   .countdown-progress{
     height:9px; background:var(--panel-3);
     border-radius:999px; overflow:hidden;
@@ -427,6 +451,7 @@
   }
   .countdown-preset:active,
   .countdown-adjust-btn:active,
+  .countdown-toggle-btn:active,
   .countdown-reset-btn:active{ transform:scale(.98); }
 
   .bottom{
@@ -561,12 +586,15 @@
   <details class="countdown-box" id="countdownBox">
     <summary class="countdown-summary">
       <span class="countdown-title"><span class="countdown-chevron" aria-hidden="true">▼</span>カウンタ</span>
-      <span class="countdown-summary-time" id="countdownSummaryTime">25:00</span>
+      <span class="countdown-summary-actions">
+        <span class="countdown-summary-time" id="countdownSummaryTime"></span>
+        <button type="button" class="countdown-toggle-btn" id="countdownToggleBtn" aria-pressed="false">OFF</button>
+      </span>
     </summary>
     <div class="countdown-body">
       <div class="countdown-display">
-        <span class="countdown-display-label">残り</span>
-        <strong class="countdown-time" id="countdownTime">25:00</strong>
+        <span class="countdown-display-label" id="countdownDisplayLabel">状態</span>
+        <strong class="countdown-time off" id="countdownTime">OFF</strong>
       </div>
       <div class="countdown-progress" aria-hidden="true">
         <div class="countdown-progress-fill" id="countdownProgressFill"></div>
@@ -684,6 +712,7 @@
   let tapTimes = [];
   let favsMemory = [];
   let currentTheme = "dark";
+  let countdownEnabled = false;
   let countdownMinutes = 25;
   let countdownDurationMs = countdownMinutes * 60 * 1000;
   let countdownRemainingMs = countdownDurationMs;
@@ -719,6 +748,8 @@
   const appRoot = $("appRoot");
   const resetBtn = $("resetBtn");
   const countdownSummaryTime = $("countdownSummaryTime");
+  const countdownToggleBtn = $("countdownToggleBtn");
+  const countdownDisplayLabel = $("countdownDisplayLabel");
   const countdownTargetLabel = $("countdownTargetLabel");
   const countdownTime = $("countdownTime");
   const countdownProgressFill = $("countdownProgressFill");
@@ -942,10 +973,16 @@
       ? Math.min(1, Math.max(0, 1 - countdownRemainingMs / countdownDurationMs))
       : 0;
 
-    countdownSummaryTime.textContent = formatClock(countdownRemainingMs);
+    countdownSummaryTime.textContent = countdownEnabled ? formatClock(countdownRemainingMs) : "";
+    countdownToggleBtn.textContent = countdownEnabled ? "ON" : "OFF";
+    countdownToggleBtn.classList.toggle("on", countdownEnabled);
+    countdownToggleBtn.setAttribute("aria-pressed", countdownEnabled ? "true" : "false");
+    countdownToggleBtn.setAttribute("aria-label", countdownEnabled ? "カウンタをOFFにする" : "カウンタをONにする");
+    countdownDisplayLabel.textContent = countdownEnabled ? "残り" : "状態";
     countdownTargetLabel.textContent = `${countdownMinutes}分`;
-    countdownTime.textContent = formatClock(countdownRemainingMs);
-    countdownProgressFill.style.width = `${Math.round(ratio * 100)}%`;
+    countdownTime.textContent = countdownEnabled ? formatClock(countdownRemainingMs) : "OFF";
+    countdownTime.classList.toggle("off", !countdownEnabled);
+    countdownProgressFill.style.width = countdownEnabled ? `${Math.round(ratio * 100)}%` : "0%";
 
     countdownPresetBtns.forEach(btn => {
       const active = Number(btn.dataset.countdownMin) === countdownMinutes;
@@ -958,8 +995,8 @@
     countdownMinutes = normalizeCountdownMinutes(minutes);
     countdownDurationMs = countdownMinutes * 60 * 1000;
     countdownRemainingMs = countdownDurationMs;
-    countdownLastTickAt = isRunning ? Date.now() : null;
-    if (isRunning && !countdownTimerId) {
+    countdownLastTickAt = countdownEnabled && isRunning ? Date.now() : null;
+    if (countdownEnabled && isRunning && !countdownTimerId) {
       countdownTimerId = setInterval(tickCountdown, 250);
     }
     updateCountdownUi();
@@ -967,7 +1004,7 @@
   }
 
   function tickCountdown() {
-    if (countdownLastTickAt == null) return;
+    if (!countdownEnabled || countdownLastTickAt == null) return;
     const now = Date.now();
     const delta = now - countdownLastTickAt;
     countdownLastTickAt = now;
@@ -982,6 +1019,7 @@
   }
 
   function startCountdown() {
+    if (!countdownEnabled) return;
     if (countdownRemainingMs <= 0) countdownRemainingMs = countdownDurationMs;
     countdownLastTickAt = Date.now();
     if (countdownTimerId) clearInterval(countdownTimerId);
@@ -1001,11 +1039,30 @@
 
   function resetCountdown() {
     countdownRemainingMs = countdownDurationMs;
-    countdownLastTickAt = isRunning ? Date.now() : null;
-    if (isRunning && !countdownTimerId) {
+    countdownLastTickAt = countdownEnabled && isRunning ? Date.now() : null;
+    if (countdownEnabled && isRunning && !countdownTimerId) {
       countdownTimerId = setInterval(tickCountdown, 250);
     }
     updateCountdownUi();
+  }
+
+  function setCountdownEnabled(enabled, skipSave = false) {
+    const nextEnabled = Boolean(enabled);
+    if (nextEnabled === countdownEnabled) {
+      updateCountdownUi();
+      if (!skipSave) saveSettings();
+      return;
+    }
+
+    if (nextEnabled) {
+      countdownEnabled = true;
+      if (isRunning) startCountdown();
+    } else {
+      pauseCountdown();
+      countdownEnabled = false;
+    }
+    updateCountdownUi();
+    if (!skipSave) saveSettings();
   }
 
   function applyTheme(theme) {
@@ -1064,6 +1121,7 @@
       suTarget: getClampedNumber(suTarget, 160),
       suStep: getClampedNumber(suStep, 5),
       suBars: getClampedNumber(suBars, 8),
+      countdownEnabled,
       countdownMinutes
     };
   }
@@ -1090,6 +1148,7 @@
       if (typeof s.suTarget === "number") suTarget.value = String(Math.max(41, Math.min(240, s.suTarget)));
       if (typeof s.suStep === "number") suStep.value = String(Math.max(1, Math.min(20, s.suStep)));
       if (typeof s.suBars === "number") suBars.value = String(Math.max(1, Math.min(64, s.suBars)));
+      if (typeof s.countdownEnabled === "boolean") countdownEnabled = s.countdownEnabled;
       if (typeof s.countdownMinutes === "number") {
         countdownMinutes = normalizeCountdownMinutes(s.countdownMinutes);
       } else if (typeof s.practiceTarget === "number") {
@@ -1440,6 +1499,11 @@
   countdownPresetBtns.forEach(btn => {
     btn.addEventListener("click", () => setCountdownMinutes(btn.dataset.countdownMin));
   });
+  countdownToggleBtn.addEventListener("click", e => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCountdownEnabled(!countdownEnabled);
+  });
   setupCountdownAdjust(countdownMinusBtn, -1);
   setupCountdownAdjust(countdownPlusBtn, 1);
   countdownResetBtn.addEventListener("click", resetCountdown);
@@ -1487,6 +1551,7 @@
     suTarget.value = "160";
     suStep.value = "5";
     suBars.value = "8";
+    countdownEnabled = false;
     countdownMinutes = 25;
     countdownDurationMs = countdownMinutes * 60 * 1000;
     resetCountdown();
