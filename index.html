@@ -18,6 +18,11 @@
 <meta name="twitter:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応。" />
 <meta name="twitter:image" content="https://amashimacreate.github.io/metronome/og-image.png" />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="pwa-192.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Metronome" />
 <title>ギター練習用メトロノーム</title>
 <style>
   :root{
@@ -1610,6 +1615,13 @@
   renderFavs();
   setBeatMode(totalBeats);
 })();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
