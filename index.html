@@ -318,6 +318,26 @@
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     margin-top:4px; color:var(--sub); font-size:12px; font-weight:600;
   }
+  .gap-pattern{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-top:9px;
+  }
+  .gap-pattern-label{ color:var(--sub); font-size:12px; font-weight:700; }
+  .gap-bars-options{
+    display:grid; grid-template-columns:1fr 1fr; gap:4px;
+    padding:3px; border-radius:11px; background:var(--panel-3);
+  }
+  .gap-bars-btn{
+    min-width:68px; height:34px; padding:0 10px;
+    border:1px solid transparent; border-radius:8px;
+    background:transparent; color:var(--sub);
+    font-size:12px; font-weight:800; cursor:pointer;
+    transition:background .15s, border-color .15s, color .15s, transform .1s;
+  }
+  .gap-bars-btn.active{
+    border-color:var(--accent); background:var(--accent-bg); color:var(--accent);
+  }
+  .gap-bars-btn:active{ transform:scale(.97); }
   .gap-status{
     flex-shrink:0; color:var(--sub); font-weight:900;
     font-variant-numeric:tabular-nums; letter-spacing:.02em;
@@ -710,8 +730,15 @@
       </label>
     </div>
     <div class="gap-meta">
-      <span>2小節クリック / 2小節無音</span>
+      <span id="gapPatternText">2小節クリック / 2小節無音</span>
       <strong class="gap-status" id="gapStatus">OFF</strong>
+    </div>
+    <div class="gap-pattern">
+      <span class="gap-pattern-label">クリック / 無音</span>
+      <div class="gap-bars-options" role="group" aria-label="クリック区間と無音区間の小節数">
+        <button type="button" class="gap-bars-btn active" data-gap-bars="2" aria-pressed="true">2小節</button>
+        <button type="button" class="gap-bars-btn" data-gap-bars="4" aria-pressed="false">4小節</button>
+      </div>
     </div>
   </div>
 
@@ -749,8 +776,7 @@
   const FAV_KEY = "metro_favs";
   const FAV_MAX = 4;
   const SETTINGS_KEY = "metro_settings_stable_novoice_v1";
-  const GAP_CLICK_BARS = 2, GAP_SILENT_BARS = 2;
-  const GAP_CYCLE_BARS = GAP_CLICK_BARS + GAP_SILENT_BARS;
+  const GAP_BAR_OPTIONS = [2, 4];
 
   let bpm = 120;
   let totalBeats = 4;
@@ -759,6 +785,7 @@
   let accentOn = true;
   let subdivision = 1;
   let gapClickEnabled = false;
+  let gapBars = 2;
   let gapBarIndex = 0, activeGapBarIndex = 0;
 
   let audioCtx = null, nextNoteTime = 0, schedulerId = null;
@@ -803,6 +830,8 @@
   const gapBox = $("gapBox");
   const gapClickToggle = $("gapClickToggle");
   const gapStatus = $("gapStatus");
+  const gapPatternText = $("gapPatternText");
+  const gapBarsBtns = Array.from(document.querySelectorAll(".gap-bars-btn"));
   const appRoot = $("appRoot");
   const resetBtn = $("resetBtn");
   const countdownSummaryTime = $("countdownSummaryTime");
@@ -941,15 +970,21 @@
   }
 
   function isGapSilentBar(barIndex) {
-    return barIndex >= GAP_CLICK_BARS;
+    return barIndex >= gapBars;
   }
 
   function nextGapBarIndex(barIndex) {
-    return (barIndex + 1) % GAP_CYCLE_BARS;
+    return (barIndex + 1) % (gapBars * 2);
   }
 
   function updateGapClickUi() {
     gapClickToggle.checked = gapClickEnabled;
+    gapPatternText.textContent = `${gapBars}小節クリック / ${gapBars}小節無音`;
+    gapBarsBtns.forEach(btn => {
+      const active = Number(btn.dataset.gapBars) === gapBars;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", String(active));
+    });
     const silent = gapClickEnabled && isRunning && isGapSilentBar(activeGapBarIndex);
     gapBox.classList.toggle("on", gapClickEnabled);
     gapBox.classList.toggle("silent", silent);
@@ -959,9 +994,9 @@
     } else if (!isRunning) {
       gapStatus.textContent = "準備";
     } else if (silent) {
-      gapStatus.textContent = `無音 ${activeGapBarIndex - GAP_CLICK_BARS + 1} / ${GAP_SILENT_BARS}`;
+      gapStatus.textContent = `無音 ${activeGapBarIndex - gapBars + 1} / ${gapBars}`;
     } else {
-      gapStatus.textContent = `クリック ${activeGapBarIndex + 1} / ${GAP_CLICK_BARS}`;
+      gapStatus.textContent = `クリック ${activeGapBarIndex + 1} / ${gapBars}`;
     }
   }
 
@@ -1219,6 +1254,7 @@
       accentOn,
       subdivision,
       gapClickEnabled,
+      gapBars,
       theme: currentTheme,
       volume: parseFloat(volumeSlider.value),
       suEnabled,
@@ -1247,6 +1283,7 @@
       if (typeof s.accentOn === "boolean") accentOn = s.accentOn;
       if ([1,2,3,4].includes(s.subdivision)) subdivision = s.subdivision;
       if (typeof s.gapClickEnabled === "boolean") gapClickEnabled = s.gapClickEnabled;
+      if (GAP_BAR_OPTIONS.includes(s.gapBars)) gapBars = s.gapBars;
       if (s.theme === "parchment" || s.theme === "dark") currentTheme = s.theme;
       if (typeof s.volume === "number") volumeSlider.value = String(Math.max(0, Math.min(1.6, s.volume)));
       if (typeof s.suEnabled === "boolean") suEnabled = s.suEnabled;
@@ -1598,6 +1635,19 @@
     }
   });
 
+  gapBarsBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const nextGapBars = Number(btn.dataset.gapBars);
+      if (!GAP_BAR_OPTIONS.includes(nextGapBars) || nextGapBars === gapBars) return;
+      gapBars = nextGapBars;
+      gapBarIndex = 0;
+      activeGapBarIndex = 0;
+      saveSettings();
+      updateGapClickUi();
+      if (isRunning && gapClickEnabled) refreshPlaybackForStructureChange();
+    });
+  });
+
   [suTarget, suStep, suBars].forEach(input => {
     input.addEventListener("input", saveSettings);
     input.addEventListener("change", () => {
@@ -1672,6 +1722,7 @@
     accentOn = true;
     subdivision = 1;
     gapClickEnabled = false;
+    gapBars = 2;
     gapBarIndex = 0;
     activeGapBarIndex = 0;
     currentTheme = "dark";
