@@ -1,4 +1,4 @@
-const CACHE_NAME = "metronome-pwa-v1";
+const CACHE_NAME = "metronome-pwa-v2";
 const LOCAL_ASSETS = [
   "./",
   "./index.html",

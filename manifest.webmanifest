@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Guitar Metronome",
   "short_name": "Metronome",
-  "description": "ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応。",
+  "description": "ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、ギャップクリック、スローアップ練習、目標時間カウンタに対応。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

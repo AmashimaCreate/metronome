@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="description" content="ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応。" />
+<meta name="description" content="ギター練習向けのシンプルなメトロノーム。BPM調整、タップテンポ、拍子切替、ギャップクリック、スローアップ練習、目標時間カウンタに対応。" />
 <meta name="theme-color" content="#101010" />
 <meta property="og:title" content="ギター練習用メトロノーム" />
-<meta property="og:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応したギター練習用メトロノーム。" />
+<meta property="og:description" content="BPM調整、タップテンポ、拍子切替、ギャップクリック、スローアップ練習、目標時間カウンタに対応したギター練習用メトロノーム。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://amashimacreate.github.io/metronome/" />
 <meta property="og:image" content="https://amashimacreate.github.io/metronome/og-image.png" />
@@ -15,7 +15,7 @@
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="ギター練習用メトロノーム" />
-<meta name="twitter:description" content="BPM調整、タップテンポ、拍子切替、アクセント、スローアップ練習、目標時間カウンタに対応。" />
+<meta name="twitter:description" content="BPM調整、タップテンポ、拍子切替、ギャップクリック、スローアップ練習、目標時間カウンタに対応。" />
 <meta name="twitter:image" content="https://amashimacreate.github.io/metronome/og-image.png" />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="manifest" href="manifest.webmanifest" />
@@ -304,6 +304,26 @@
     display:none; text-align:center; letter-spacing:.04em;
   }
   .slowup-status.visible{ display:block; }
+
+  .gap-box{
+    background:var(--panel-2); border:1px solid rgba(128,128,128,.14);
+    border-radius:var(--radius); padding:11px 14px;
+    margin-bottom:var(--section-gap); transition:border-color .16s, background .16s;
+  }
+  .gap-box.on{ border-color:var(--accent-dim); background:var(--accent-bg); }
+  .gap-box.silent{ border-color:rgba(128,128,128,.28); background:var(--panel-2); }
+  .gap-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .gap-title{ font-size:15px; font-weight:800; color:var(--text); }
+  .gap-meta{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-top:4px; color:var(--sub); font-size:12px; font-weight:600;
+  }
+  .gap-status{
+    flex-shrink:0; color:var(--sub); font-weight:900;
+    font-variant-numeric:tabular-nums; letter-spacing:.02em;
+  }
+  .gap-box.on .gap-status{ color:var(--accent); }
+  .gap-box.silent .gap-status{ color:var(--text); }
 
   .countdown-box{
     background:var(--panel-2);
@@ -647,6 +667,20 @@
     <button type="button" class="subdiv-btn" data-sub="3">3連</button>
   </div>
 
+  <div class="gap-box" id="gapBox">
+    <div class="gap-header">
+      <div class="gap-title">ギャップクリック</div>
+      <label class="toggle-switch" aria-label="ギャップクリックをONまたはOFFにする">
+        <input type="checkbox" id="gapClickToggle">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div class="gap-meta">
+      <span>2小節クリック / 2小節無音</span>
+      <strong class="gap-status" id="gapStatus">OFF</strong>
+    </div>
+  </div>
+
   <div class="section-label">お気に入り BPM <span id="favCount" style="font-weight:400;font-size:12px"></span></div>
   <div class="favorites-row" id="favoritesRow">
     <span class="fav-empty" id="favEmpty">まだ保存なし</span>
@@ -715,6 +749,8 @@
   const FAV_KEY = "metro_favs";
   const FAV_MAX = 4;
   const SETTINGS_KEY = "metro_settings_stable_novoice_v1";
+  const GAP_CLICK_BARS = 2, GAP_SILENT_BARS = 2;
+  const GAP_CYCLE_BARS = GAP_CLICK_BARS + GAP_SILENT_BARS;
 
   let bpm = 120;
   let totalBeats = 4;
@@ -722,6 +758,8 @@
   let isRunning = false;
   let accentOn = true;
   let subdivision = 1;
+  let gapClickEnabled = false;
+  let gapBarIndex = 0, activeGapBarIndex = 0;
 
   let audioCtx = null, nextNoteTime = 0, schedulerId = null;
   let flashTimers = [], schedulerRunId = 0;
@@ -762,6 +800,9 @@
   const suTarget = $("suTarget");
   const suStep = $("suStep");
   const suBars = $("suBars");
+  const gapBox = $("gapBox");
+  const gapClickToggle = $("gapClickToggle");
+  const gapStatus = $("gapStatus");
   const appRoot = $("appRoot");
   const resetBtn = $("resetBtn");
   const countdownSummaryTime = $("countdownSummaryTime");
@@ -830,22 +871,32 @@
     while (nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD_SEC) {
       const beat = currentBeat;
       const isAccent = accentOn && beat === 0;
+      const gapSilent = gapClickEnabled && isGapSilentBar(gapBarIndex);
 
-      playClick(nextNoteTime, isAccent);
-
-      if (subdivision > 1) {
-        const spb = 60 / bpm;
-        for (let s = 1; s < subdivision; s++) {
-          const st = nextNoteTime + (spb / subdivision) * s;
-          playSubClick(st);
-          scheduleSubFlash(beat, s, st, runId);
-        }
+      if (gapClickEnabled && beat === 0) {
+        scheduleGapPhase(gapBarIndex, nextNoteTime, runId);
       }
 
-      scheduleFlash(beat, nextNoteTime, runId);
+      if (!gapSilent) {
+        playClick(nextNoteTime, isAccent);
+
+        if (subdivision > 1) {
+          const spb = 60 / bpm;
+          for (let s = 1; s < subdivision; s++) {
+            const st = nextNoteTime + (spb / subdivision) * s;
+            playSubClick(st);
+            scheduleSubFlash(beat, s, st, runId);
+          }
+        }
+
+        scheduleFlash(beat, nextNoteTime, runId);
+      }
 
       nextNoteTime += 60 / bpm;
       currentBeat = (currentBeat + 1) % totalBeats;
+      if (gapClickEnabled && currentBeat === 0) {
+        gapBarIndex = nextGapBarIndex(gapBarIndex);
+      }
 
       if (suEnabled && beat === 0) {
         suBeatCount++;
@@ -885,6 +936,41 @@
         const endId = setTimeout(() => sd.classList.remove("active"), FLASH_MS);
         flashTimers.push(endId);
       }
+    }, delay);
+    flashTimers.push(id);
+  }
+
+  function isGapSilentBar(barIndex) {
+    return barIndex >= GAP_CLICK_BARS;
+  }
+
+  function nextGapBarIndex(barIndex) {
+    return (barIndex + 1) % GAP_CYCLE_BARS;
+  }
+
+  function updateGapClickUi() {
+    gapClickToggle.checked = gapClickEnabled;
+    const silent = gapClickEnabled && isRunning && isGapSilentBar(activeGapBarIndex);
+    gapBox.classList.toggle("on", gapClickEnabled);
+    gapBox.classList.toggle("silent", silent);
+
+    if (!gapClickEnabled) {
+      gapStatus.textContent = "OFF";
+    } else if (!isRunning) {
+      gapStatus.textContent = "準備";
+    } else if (silent) {
+      gapStatus.textContent = `無音 ${activeGapBarIndex - GAP_CLICK_BARS + 1} / ${GAP_SILENT_BARS}`;
+    } else {
+      gapStatus.textContent = `クリック ${activeGapBarIndex + 1} / ${GAP_CLICK_BARS}`;
+    }
+  }
+
+  function scheduleGapPhase(barIndex, time, runId) {
+    const delay = Math.max(0, (time - getCtx().currentTime) * 1000);
+    const id = setTimeout(() => {
+      if (!isRunning || !gapClickEnabled || schedulerRunId !== runId) return;
+      activeGapBarIndex = barIndex;
+      updateGapClickUi();
     }, delay);
     flashTimers.push(id);
   }
@@ -1132,6 +1218,7 @@
       totalBeats,
       accentOn,
       subdivision,
+      gapClickEnabled,
       theme: currentTheme,
       volume: parseFloat(volumeSlider.value),
       suEnabled,
@@ -1159,6 +1246,7 @@
       if (s.totalBeats === 3 || s.totalBeats === 4) totalBeats = s.totalBeats;
       if (typeof s.accentOn === "boolean") accentOn = s.accentOn;
       if ([1,2,3,4].includes(s.subdivision)) subdivision = s.subdivision;
+      if (typeof s.gapClickEnabled === "boolean") gapClickEnabled = s.gapClickEnabled;
       if (s.theme === "parchment" || s.theme === "dark") currentTheme = s.theme;
       if (typeof s.volume === "number") volumeSlider.value = String(Math.max(0, Math.min(1.6, s.volume)));
       if (typeof s.suEnabled === "boolean") suEnabled = s.suEnabled;
@@ -1261,6 +1349,7 @@
       schedulerRunId++;
       startStopBtn.classList.remove("running");
       startStopBtn.textContent = "▶ スタート";
+      updateGapClickUi();
       showAudioError();
       return;
     }
@@ -1269,12 +1358,15 @@
     schedulerRunId++;
     currentBeat = 0;
     suBeatCount = 0;
+    gapBarIndex = 0;
+    activeGapBarIndex = 0;
     nextNoteTime = ctx.currentTime + 0.06;
 
     startStopBtn.classList.add("running");
     startStopBtn.textContent = "■ ストップ";
 
     clearFlash();
+    updateGapClickUi();
     updateSlowupStatus();
     startCountdown();
     scheduler(schedulerRunId);
@@ -1291,6 +1383,7 @@
     startStopBtn.classList.remove("running");
     startStopBtn.textContent = "▶ スタート";
     slowupStatus.classList.remove("visible");
+    updateGapClickUi();
     pauseCountdown();
   }
 
@@ -1493,6 +1586,18 @@
     saveSettings();
   });
 
+  gapClickToggle.addEventListener("change", () => {
+    gapClickEnabled = gapClickToggle.checked;
+    gapBarIndex = 0;
+    activeGapBarIndex = 0;
+    saveSettings();
+    if (isRunning) {
+      refreshPlaybackForStructureChange();
+    } else {
+      updateGapClickUi();
+    }
+  });
+
   [suTarget, suStep, suBars].forEach(input => {
     input.addEventListener("input", saveSettings);
     input.addEventListener("change", () => {
@@ -1566,6 +1671,9 @@
     totalBeats = 4;
     accentOn = true;
     subdivision = 1;
+    gapClickEnabled = false;
+    gapBarIndex = 0;
+    activeGapBarIndex = 0;
     currentTheme = "dark";
     volumeSlider.value = "1";
     suEnabled = false;
@@ -1580,6 +1688,7 @@
     updateVolumeLabel();
     updateAccentButton();
     updateSlowupUi();
+    updateGapClickUi();
 
     document.querySelectorAll(".subdiv-btn").forEach(btn => {
       btn.classList.toggle("active", parseInt(btn.dataset.sub, 10) === 1);
@@ -1606,6 +1715,7 @@
   updateVolumeLabel();
   updateAccentButton();
   updateSlowupUi();
+  updateGapClickUi();
   updateCountdownUi();
   document.querySelectorAll(".subdiv-btn").forEach(btn => {
     btn.classList.toggle("active", parseInt(btn.dataset.sub, 10) === subdivision);
